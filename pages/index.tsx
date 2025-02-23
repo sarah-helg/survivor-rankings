@@ -1,8 +1,32 @@
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
+// Define the type for a cast member.
+interface CastMember {
+  id: number;
+  name: string;
+  info: {
+    age: number;
+    hometown: string;
+    currentResidence: string;
+    occupation: string;
+    description: string;
+  };
+  imageUrl: string;
+}
+
+// Define the submission type.
+interface Submission {
+  userName: string;
+  rankings: {
+    position: number;
+    castMember?: string;
+  }[];
+  timestamp: string;
+}
+
 const SurvivorRankingApp = () => {
-  const initialCastMembers = [
+  const initialCastMembers: CastMember[] = [
     { id: 1, name: "Stephanie Berger", info: { age: 38, hometown: "New York City, N.Y.", currentResidence: "Brooklyn, N.Y.", occupation: "Tech product lead", description: "Ambitious, outgoing, resilient" }, imageUrl: "/images/Stephanie.jpg" },
     { id: 2, name: "Shauhin Davari", info: { age: 38, hometown: "Los Angeles, CA", currentResidence: "Santa Monica, CA", occupation: "Marketing Manager", description: "Creative, detail-oriented, adventurous" }, imageUrl: "/images/Shauhin.png" },
     { id: 3, name: "Eva Erickson", info: { age: 24, hometown: "Eagan, Minn.", currentResidence: "Providence, R.I.", occupation: "PhD Candidate", description: "Energetic, driven, competitive" }, imageUrl: "/images/Eva.jpg" },
@@ -23,14 +47,15 @@ const SurvivorRankingApp = () => {
     { id: 18, name: "Mary Zheng", info: { age: 31, hometown: "Montgomery Village, Md.", currentResidence: "Philadelphia, Pa.", occupation: "Substance abuse counselor", description: "Chaotic, dynamic, thoughtful" }, imageUrl: "/images/Mary.jpg" },
   ];
 
-  const [rankings, setRankings] = useState(Array(18).fill(null));
-  const [selectedCastMembers, setSelectedCastMembers] = useState(initialCastMembers);
+  // Declare rankings as an array of numbers or nulls.
+  const [rankings, setRankings] = useState<(number | null)[]>(Array(18).fill(null));
+  const [selectedCastMembers] = useState<CastMember[]>(initialCastMembers);
   const [userName, setUserName] = useState('');
-  const [submissions, setSubmissions] = useState([]);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [showNamePrompt, setShowNamePrompt] = useState(false);
 
-  const handleRankingChange = (position, castMemberId) => {
+  const handleRankingChange = (position: number, castMemberId: number | null) => {
     const newRankings = [...rankings];
     if (castMemberId !== null) {
       const previousPosition = rankings.findIndex(id => id === castMemberId);
@@ -64,7 +89,7 @@ const SurvivorRankingApp = () => {
 
     if (!confirmSubmit) return;
 
-    const submission = {
+    const submission: Submission = {
       userName,
       rankings: rankings.map((id, index) => ({
         position: 18 - index,
@@ -112,41 +137,44 @@ const SurvivorRankingApp = () => {
     // Code for exporting results as CSV
   };
 
+  // Wrap the Card in a div to apply styling since Card doesn't accept a className.
   const NamePrompt = () => (
-    <Card className="max-w-md mx-auto mt-8">
-      <CardHeader>
-        <CardTitle>Submit Your Rankings</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <p className="text-red-500 font-semibold">
-            Important: You can only submit once and cannot change your rankings after submission.
-          </p>
-          <div>
-            <label className="block mb-2">Your Name:</label>
-            <input
-              autoFocus
-              type="text"
-              className="w-full p-2 border rounded"
-              value={userName}
-              onChange={(e) => setUserName(e.target.value)}
-            />
+    <div className="max-w-md mx-auto mt-8">
+      <Card>
+        <CardHeader>
+          <CardTitle>Submit Your Rankings</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <p className="text-red-500 font-semibold">
+              Important: You can only submit once and cannot change your rankings after submission.
+            </p>
+            <div>
+              <label className="block mb-2">Your Name:</label>
+              <input
+                autoFocus
+                type="text"
+                className="w-full p-2 border rounded"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+              />
+            </div>
+            <button
+              className="w-full px-4 py-2 bg-blue-500 text-white rounded"
+              onClick={handleSubmitName}
+            >
+              Submit Final Rankings
+            </button>
+            <button
+              className="w-full px-4 py-2 border rounded"
+              onClick={() => setShowNamePrompt(false)}
+            >
+              Back to Rankings
+            </button>
           </div>
-          <button
-            className="w-full px-4 py-2 bg-blue-500 text-white rounded"
-            onClick={handleSubmitName}
-          >
-            Submit Final Rankings
-          </button>
-          <button
-            className="w-full px-4 py-2 border rounded"
-            onClick={() => setShowNamePrompt(false)}
-          >
-            Back to Rankings
-          </button>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 
   const RankingForm = () => (
@@ -217,7 +245,7 @@ const SurvivorRankingApp = () => {
               <div className="flex justify-between">
                 <span className="font-semibold">{submission.userName}</span>
                 {/* Remove or define submission.score if not needed */}
-                <span className="text-sm text-gray-500">Score: {submission.score || '-'}</span>
+                <span className="text-sm text-gray-500">Score: {'-'}</span>
               </div>
               <div className="text-sm">
                 {submission.rankings.map((ranking, i) => (
@@ -242,18 +270,30 @@ const SurvivorRankingApp = () => {
   );
 };
 
-const CustomDropdown = ({ selectedCastMembers, rankings, position, handleRankingChange }) => {
+interface CustomDropdownProps {
+  selectedCastMembers: CastMember[];
+  rankings: (number | null)[];
+  position: number;
+  handleRankingChange: (position: number, castMemberId: number | null) => void;
+}
+
+const CustomDropdown = ({
+  selectedCastMembers,
+  rankings,
+  position,
+  handleRankingChange,
+}: CustomDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="relative w-full">
       <div
         className="border rounded p-2 cursor-pointer"
         tabIndex={0}
-        onClick={() => setIsOpen(prev => !prev)}
+        onClick={() => setIsOpen((prev) => !prev)}
       >
         {rankings[position] ? (
           <span className="font-semibold">
-            {selectedCastMembers.find(m => m.id === rankings[position])?.name}
+            {selectedCastMembers.find((m: CastMember) => m.id === rankings[position])?.name}
           </span>
         ) : (
           <span className="text-gray-500">Select Cast Member</span>
@@ -261,7 +301,7 @@ const CustomDropdown = ({ selectedCastMembers, rankings, position, handleRanking
       </div>
       {isOpen && (
         <div className="absolute left-0 right-0 mt-1 bg-white border rounded shadow-lg z-10">
-          {selectedCastMembers.map(member => {
+          {selectedCastMembers.map((member: CastMember) => {
             const isSelected = rankings.includes(member.id);
             return (
               <div
