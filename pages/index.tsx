@@ -1,323 +1,330 @@
-import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
 
-// Define the type for a cast member.
-interface CastMember {
-  id: number;
-  name: string;
-  info: {
-    age: number;
-    hometown: string;
-    currentResidence: string;
-    occupation: string;
-    description: string;
-  };
-  imageUrl: string;
-}
-
-// Define the submission type.
 interface Submission {
-  userName: string;
-  rankings: {
-    position: number;
-    castMember?: string;
-  }[];
-  timestamp: string;
+    userName: string;
+    rankings: {
+        position: number;
+        castMember: string;
+    }[];
+    score?: number;
 }
 
 const SurvivorRankingApp = () => {
-  const initialCastMembers: CastMember[] = [
-    { id: 1, name: "Stephanie Berger", info: { age: 38, hometown: "New York City, N.Y.", currentResidence: "Brooklyn, N.Y.", occupation: "Tech product lead", description: "Ambitious, outgoing, resilient" }, imageUrl: "/images/Stephanie.jpg" },
-    { id: 2, name: "Shauhin Davari", info: { age: 38, hometown: "Los Angeles, CA", currentResidence: "Santa Monica, CA", occupation: "Marketing Manager", description: "Creative, detail-oriented, adventurous" }, imageUrl: "/images/Shauhin.png" },
-    { id: 3, name: "Eva Erickson", info: { age: 24, hometown: "Eagan, Minn.", currentResidence: "Providence, R.I.", occupation: "PhD Candidate", description: "Energetic, driven, competitive" }, imageUrl: "/images/Eva.jpg" },
-    { id: 4, name: "Kyle Fraser", info: { age: 31, hometown: "Roanoke, Va.", currentResidence: "Brooklyn, N.Y.", occupation: "Attorney", description: "Fun, crafty, social" }, imageUrl: "/images/kyle.jpg" },
-    { id: 5, name: "Mitch Guerra", info: { age: 34, hometown: "Waco, Tex.", currentResidence: "Waco, Tex.", occupation: "PE Coach", description: "Joyful, relational, competitive" }, imageUrl: "/images/mitch.jpg" },
-    { id: 6, name: "Saiounia 'Sai' Hughley", info: { age: 30, hometown: "Philadelphia, Pa.", currentResidence: "Simi Valley, Calif.", occupation: "Marketing Professional", description: "Outgoing, kind, driven" }, imageUrl: "/images/Sai.jpg" },
-    { id: 7, name: "Joe Hunter", info: { age: 45, hometown: "Vacaville, Calif.", currentResidence: "West Sacramento, Calif.", occupation: "Fire Captain", description: "Courageous, compassionate, loving/kick-ass dad!" }, imageUrl: "/images/Joe.jpg" },
-    { id: 8, name: "Kamilla Karthigesu", info: { age: 31, hometown: "Toronto, Canada", currentResidence: "Foster City, Calif.", occupation: "Software engineer", description: "Silly, expressive, impatient" }, imageUrl: "/images/Kamilla.jpg" },
-    { id: 9, name: "David Kinne", info: { age: 39, hometown: "Long Beach, Calif.", currentResidence: "Buena Park, Calif.", occupation: "Stunt Performer", description: "Passionate, daring, curious" }, imageUrl: "/images/David.jpg" },
-    { id: 10, name: "Thomas Krottinger", info: { age: 34, hometown: "The Woodlands, Tex.", currentResidence: "Los Angeles, Calif.", occupation: "Music executive", description: "Outgoing, emotional, loyal" }, imageUrl: "/images/Thomas.jpg" },
-    { id: 11, name: "Kevin Leung", info: { age: 34, hometown: "Fremont, Calif.", currentResidence: "Livermore, Calif.", occupation: "Finance Manager", description: "Energetic, social, determined." }, imageUrl: "/images/Kevin.jpg" },
-    { id: 12, name: "Cedrek McFadden", info: { age: 45, hometown: "Columbia, S.C.", currentResidence: "Greenville, S.C.", occupation: "Surgeon", description: "Dependable, determined, conscientious" }, imageUrl: "/images/Cedrek.jpg" },
-    { id: 13, name: "Charity Nelms", info: { age: 34, hometown: "Monroe, Mich.", currentResidence: "St. Petersburg, Fla.", occupation: "Flight Attendant", description: "Bold, fun, loyal" }, imageUrl: "/images/Charity.jpg" },
-    { id: 14, name: "Justin Pioppi", info: { age: 29, hometown: "Winthrop, Mass.", currentResidence: "Winthrop, Mass.", occupation: "Pizzeria manager", description: "Compassionate, hard-working, resilient" }, imageUrl: "/images/Justin.jpg" },
-    { id: 15, name: "Bianca Roses", info: { age: 33, hometown: "West Orange, N.J.", currentResidence: "Arlington, Va.", occupation: "PR Consultant", description: "Bold, friendly, enthusiastic" }, imageUrl: "/images/Bianca.jpg" },
-    { id: 16, name: "Chrissy Sarnowsky", info: { age: 55, hometown: "South Side of Chicago, Ill.", currentResidence: "South Side of Chicago, Ill.", occupation: "Fire Lieutenant", description: "Badass, lucky, generous" }, imageUrl: "/images/Chrissy.jpg" },
-    { id: 17, name: "Star Toomey", info: { age: 28, hometown: "Monrovia, Liberia", currentResidence: "Augusta, Ga.", occupation: "Sales Expert", description: "Hilarious, smooth, laugh-out-loud funny." }, imageUrl: "/images/Star.jpg" },
-    { id: 18, name: "Mary Zheng", info: { age: 31, hometown: "Montgomery Village, Md.", currentResidence: "Philadelphia, Pa.", occupation: "Substance abuse counselor", description: "Chaotic, dynamic, thoughtful" }, imageUrl: "/images/Mary.jpg" },
-  ];
+    const [viewMode, setViewMode] = useState<"form" | "results">("results");
+    const [submissions, setSubmissions] = useState<Submission[]>([]);
+    const [loading, setLoading] = useState(false);
 
-  // Declare rankings as an array of numbers or nulls.
-  const [rankings, setRankings] = useState<(number | null)[]>(Array(18).fill(null));
-  const [selectedCastMembers] = useState<CastMember[]>(initialCastMembers);
-  const [userName, setUserName] = useState('');
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [showResults, setShowResults] = useState(false);
-  const [showNamePrompt, setShowNamePrompt] = useState(false);
-
-  const handleRankingChange = (position: number, castMemberId: number | null) => {
-    const newRankings = [...rankings];
-    if (castMemberId !== null) {
-      const previousPosition = rankings.findIndex(id => id === castMemberId);
-      if (previousPosition !== -1) {
-        newRankings[previousPosition] = null;
-      }
-    }
-    newRankings[position] = castMemberId;
-    setRankings(newRankings);
-  };
-
-  const handleSubmitName = async () => {
-    if (!userName.trim()) {
-      alert('Please enter your name');
-      return;
-    }
-
-    if (submissions.some(sub => sub.userName.toLowerCase() === userName.toLowerCase())) {
-      alert('This name has already been used. Please use a different name.');
-      return;
-    }
-
-    if (rankings.includes(null)) {
-      alert('Please complete all rankings before submitting');
-      return;
-    }
-
-    const confirmSubmit = window.confirm(
-      'WARNING: This submission is final and cannot be changed. Are you sure you want to submit your rankings?'
-    );
-
-    if (!confirmSubmit) return;
-
-    const submission: Submission = {
-      userName,
-      rankings: rankings.map((id, index) => ({
-        position: 18 - index,
-        castMember: initialCastMembers.find(m => m.id === id)?.name
-      })),
-      timestamp: new Date().toISOString()
+    // Hardcoded scores for all 14 submitters
+    const hardcodedScores: { [key: string]: number } = {
+        "Sammy": 0, "Sarah K": 0, "Tom Kourlis": 0, "Genna": 0,
+        "Vale": 0, "Danica W": 0, "Cristina Miller": 3, "Izzy": 0,
+        "Andy": 0, "Aram": 0, "Alexandra Campanile": 0, "Campy": 0,
+        "Ivette": 1, "Caitlin": 0
     };
 
-    try {
-      const response = await fetch(
-        "https://script.google.com/macros/s/AKfycbw3J7-1zP1xIL_owcnl86J33ar9DkarUrYutt-GVfZUNgCYSQndHg5j7LSkPEDKsL8tjw/exec",
+    // Full submitted rankings for all 14 users
+    const submittedData: Submission[] = [
         {
-          method: 'POST',
-          mode: 'no-cors', // Using no-cors mode; response is opaque.
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(submission)
+            userName: "Sammy",
+            rankings: [
+                { position: 18, castMember: "Charity Nelms" }, { position: 17, castMember: "Saiounia 'Sai' Hughley" },
+                { position: 16, castMember: "Thomas Krottinger" }, { position: 15, castMember: "Bianca Roses" },
+                { position: 14, castMember: "Chrissy Sarnowsky" }, { position: 13, castMember: "Star Toomey" },
+                { position: 12, castMember: "Eva Erickson" }, { position: 11, castMember: "Kevin Leung" },
+                { position: 10, castMember: "David Kinne" }, { position: 9, castMember: "Justin Pioppi" },
+                { position: 8, castMember: "Shauhin Davari" }, { position: 7, castMember: "Kyle Fraser" },
+                { position: 6, castMember: "Joe Hunter" }, { position: 5, castMember: "Stephanie Berger" },
+                { position: 4, castMember: "Cedrek McFadden" }, { position: 3, castMember: "Mary Zheng" },
+                { position: 2, castMember: "Kamilla Karthigesu" }, { position: 1, castMember: "Mitch Guerra" }
+            ],
+        score: hardcodedScores["Sammy"]
+        },
+        {
+            userName: "Sarah K",
+            rankings: [
+                { position: 18, castMember: "Shauhin Davari" }, { position: 17, castMember: "Bianca Roses" },
+                { position: 16, castMember: "Charity Nelms" }, { position: 15, castMember: "Justin Pioppi" },
+                { position: 14, castMember: "Star Toomey" }, { position: 13, castMember: "Kamilla Karthigesu" },
+                { position: 12, castMember: "Thomas Krottinger" }, { position: 11, castMember: "Mary Zheng" },
+                { position: 10, castMember: "David Kinne" }, { position: 9, castMember: "Kevin Leung" },
+                { position: 8, castMember: "Mitch Guerra" }, { position: 7, castMember: "Kyle Fraser" },
+                { position: 6, castMember: "Chrissy Sarnowsky" }, { position: 5, castMember: "Cedrek McFadden" },
+                { position: 4, castMember: "Stephanie Berger" }, { position: 3, castMember: "Eva Erickson" },
+                { position: 2, castMember: "Saiounia 'Sai' Hughley" }, { position: 1, castMember: "Joe Hunter" }
+            ],
+            score: hardcodedScores["Sarah K"]
+        },
+        {
+            userName: "Tom Kourlis",
+            rankings: [
+                { position: 18, castMember: "Kamilla Karthigesu" }, { position: 17, castMember: "Chrissy Sarnowsky" },
+                { position: 16, castMember: "Cedrek McFadden" }, { position: 15, castMember: "Thomas Krottinger" },
+                { position: 14, castMember: "Saiounia 'Sai' Hughley" }, { position: 13, castMember: "Joe Hunter" },
+                { position: 12, castMember: "Mary Zheng" }, { position: 11, castMember: "Kyle Fraser" },
+                { position: 10, castMember: "Stephanie Berger" }, { position: 9, castMember: "David Kinne" },
+                { position: 8, castMember: "Charity Nelms" }, { position: 7, castMember: "Shauhin Davari" },
+                { position: 6, castMember: "Mitch Guerra" }, { position: 5, castMember: "Eva Erickson" },
+                { position: 4, castMember: "Justin Pioppi" }, { position: 3, castMember: "Star Toomey" },
+                { position: 2, castMember: "Bianca Roses" }, { position: 1, castMember: "Kevin Leung" }
+            ],
+            score: hardcodedScores["Tom Kourlis"]
+        },
+        {
+            userName: "Genna",
+            rankings: [
+                { position: 18, castMember: "Shauhin Davari" }, { position: 17, castMember: "Kevin Leung" },
+                { position: 16, castMember: "Thomas Krottinger" }, { position: 15, castMember: "Justin Pioppi" },
+                { position: 14, castMember: "Mary Zheng" }, { position: 13, castMember: "Cedrek McFadden" },
+                { position: 12, castMember: "Kamilla Karthigesu" }, { position: 11, castMember: "Bianca Roses" },
+                { position: 10, castMember: "Kyle Fraser" }, { position: 9, castMember: "Saiounia 'Sai' Hughley" },
+                { position: 8, castMember: "Star Toomey" }, { position: 7, castMember: "David Kinne" },
+                { position: 6, castMember: "Mitch Guerra" }, { position: 5, castMember: "Chrissy Sarnowsky" },
+                { position: 4, castMember: "Stephanie Berger" }, { position: 3, castMember: "Charity Nelms" },
+                { position: 2, castMember: "Joe Hunter" }, { position: 1, castMember: "Eva Erickson" }
+            ],
+            score: hardcodedScores["Genna"]
+        },
+        {
+            userName: "Vale",
+            rankings: [
+                { position: 18, castMember: "Thomas Krottinger" }, { position: 17, castMember: "Mitch Guerra" },
+                { position: 16, castMember: "Bianca Roses" }, { position: 15, castMember: "Kamilla Karthigesu" },
+                { position: 14, castMember: "Mary Zheng" }, { position: 13, castMember: "Shauhin Davari" },
+                { position: 12, castMember: "Cedrek McFadden" }, { position: 11, castMember: "Saiounia 'Sai' Hughley" },
+                { position: 10, castMember: "Stephanie Berger" }, { position: 9, castMember: "Justin Pioppi" },
+                { position: 8, castMember: "Chrissy Sarnowsky" }, { position: 7, castMember: "Eva Erickson" },
+                { position: 6, castMember: "Charity Nelms" }, { position: 5, castMember: "David Kinne" },
+                { position: 4, castMember: "Kyle Fraser" }, { position: 3, castMember: "Kevin Leung" },
+                { position: 2, castMember: "Star Toomey" }, { position: 1, castMember: "Joe Hunter" }
+            ],
+            score: hardcodedScores["Vale"]
+        },
+        {
+            userName: "Danica W",
+            rankings: [
+                { position: 18, castMember: "Justin Pioppi" }, { position: 17, castMember: "Saiounia 'Sai' Hughley" },
+                { position: 16, castMember: "Shauhin Davari" }, { position: 15, castMember: "Thomas Krottinger" },
+                { position: 14, castMember: "Kevin Leung" }, { position: 13, castMember: "David Kinne" },
+                { position: 12, castMember: "Kamilla Karthigesu" }, { position: 11, castMember: "Star Toomey" },
+                { position: 10, castMember: "Bianca Roses" }, { position: 9, castMember: "Stephanie Berger" },
+                { position: 8, castMember: "Eva Erickson" }, { position: 7, castMember: "Kyle Fraser" },
+                { position: 6, castMember: "Joe Hunter" }, { position: 5, castMember: "Mary Zheng" },
+                { position: 4, castMember: "Cedrek McFadden" }, { position: 3, castMember: "Charity Nelms" },
+                { position: 2, castMember: "Mitch Guerra" }, { position: 1, castMember: "Chrissy Sarnowsky" }
+            ],
+            score: hardcodedScores["Danica W"]
+        },
+        {
+            userName: "Cristina Miller",
+            rankings: [
+                { position: 18, castMember: "David Kinne" }, { position: 17, castMember: "Stephanie Berger" },
+                { position: 16, castMember: "Justin Pioppi" }, { position: 15, castMember: "Kamilla Karthigesu" },
+                { position: 14, castMember: "Charity Nelms" }, { position: 13, castMember: "Kevin Leung" },
+                { position: 12, castMember: "Star Toomey" }, { position: 11, castMember: "Bianca Roses" },
+                { position: 10, castMember: "Thomas Krottinger" }, { position: 9, castMember: "Kyle Fraser" },
+                { position: 8, castMember: "Shauhin Davari" }, { position: 7, castMember: "Mary Zheng" },
+                { position: 6, castMember: "Joe Hunter" }, { position: 5, castMember: "Mitch Guerra" },
+                { position: 4, castMember: "Saiounia 'Sai' Hughley" }, { position: 3, castMember: "Eva Erickson" },
+                { position: 2, castMember: "Chrissy Sarnowsky" }, { position: 1, castMember: "Cedrek McFadden" }
+            ],
+            score: hardcodedScores["Cristina Miller"]
+        },
+        {
+            userName: "Izzy",
+            rankings: [
+                { position: 18, castMember: "Thomas Krottinger" }, { position: 17, castMember: "Mary Zheng" },
+                { position: 16, castMember: "Justin Pioppi" }, { position: 15, castMember: "Eva Erickson" },
+                { position: 14, castMember: "Kamilla Karthigesu" }, { position: 13, castMember: "Cedrek McFadden" },
+                { position: 12, castMember: "Saiounia 'Sai' Hughley" }, { position: 11, castMember: "David Kinne" },
+                { position: 10, castMember: "Bianca Roses" }, { position: 9, castMember: "Shauhin Davari" },
+                { position: 8, castMember: "Kevin Leung" }, { position: 7, castMember: "Chrissy Sarnowsky" },
+                { position: 6, castMember: "Kyle Fraser" }, { position: 5, castMember: "Star Toomey" },
+                { position: 4, castMember: "Joe Hunter" }, { position: 3, castMember: "Stephanie Berger" },
+                { position: 2, castMember: "Mitch Guerra" }, { position: 1, castMember: "Charity Nelms" }
+            ],
+            score: hardcodedScores["Izzy"]
+        },
+        {
+            userName: "Andy",
+            rankings: [
+                { position: 18, castMember: "Charity Nelms" }, { position: 17, castMember: "Justin Pioppi" },
+                { position: 16, castMember: "Thomas Krottinger" }, { position: 15, castMember: "Star Toomey" },
+                { position: 14, castMember: "Kamilla Karthigesu" }, { position: 13, castMember: "Saiounia 'Sai' Hughley" },
+                { position: 12, castMember: "Stephanie Berger" }, { position: 11, castMember: "Bianca Roses" },
+                { position: 10, castMember: "Mitch Guerra" }, { position: 9, castMember: "Kevin Leung" },
+                { position: 8, castMember: "Kyle Fraser" }, { position: 7, castMember: "Eva Erickson" },
+                { position: 6, castMember: "David Kinne" }, { position: 5, castMember: "Chrissy Sarnowsky" },
+                { position: 4, castMember: "Joe Hunter" }, { position: 3, castMember: "Cedrek McFadden" },
+                { position: 2, castMember: "Mary Zheng" }, { position: 1, castMember: "Shauhin Davari" }
+            ],
+            score: hardcodedScores["Andy"]
+        },
+        {
+            userName: "Aram",
+            rankings: [
+                { position: 18, castMember: "Thomas Krottinger" }, { position: 17, castMember: "Kamilla Karthigesu" },
+                { position: 16, castMember: "Saiounia 'Sai' Hughley" }, { position: 15, castMember: "Justin Pioppi" },
+                { position: 14, castMember: "Kyle Fraser" }, { position: 13, castMember: "Bianca Roses" },
+                { position: 12, castMember: "Eva Erickson" }, { position: 11, castMember: "Shauhin Davari" },
+                { position: 10, castMember: "Charity Nelms" }, { position: 9, castMember: "Star Toomey" },
+                { position: 8, castMember: "Mitch Guerra" }, { position: 7, castMember: "Stephanie Berger" },
+                { position: 6, castMember: "David Kinne" }, { position: 5, castMember: "Cedrek McFadden" },
+                { position: 4, castMember: "Kevin Leung" }, { position: 3, castMember: "Mary Zheng" },
+                { position: 2, castMember: "Joe Hunter" }, { position: 1, castMember: "Chrissy Sarnowsky" }
+            ],
+            score: hardcodedScores["Aram"]
+        },
+        {
+            userName: "Alexandra Campanile",
+            rankings: [
+                { position: 18, castMember: "Kevin Leung" }, { position: 17, castMember: "Chrissy Sarnowsky" },
+                { position: 16, castMember: "Cedrek McFadden" }, { position: 15, castMember: "Joe Hunter" },
+                { position: 14, castMember: "Eva Erickson" }, { position: 13, castMember: "Shauhin Davari" },
+                { position: 12, castMember: "Stephanie Berger" }, { position: 11, castMember: "Thomas Krottinger" },
+                { position: 10, castMember: "Charity Nelms" }, { position: 9, castMember: "Kyle Fraser" },
+                { position: 8, castMember: "Mitch Guerra" }, { position: 7, castMember: "Saiounia 'Sai' Hughley" },
+                { position: 6, castMember: "Mary Zheng" }, { position: 5, castMember: "Star Toomey" },
+                { position: 4, castMember: "David Kinne" }, { position: 3, castMember: "Bianca Roses" },
+                { position: 2, castMember: "Justin Pioppi" }, { position: 1, castMember: "Kamilla Karthigesu" }
+            ],
+            score: hardcodedScores["Alexandra Campanile"]
+        },
+        {
+            userName: "Campy",
+            rankings: [
+                { position: 18, castMember: "Justin Pioppi" }, { position: 17, castMember: "Eva Erickson" },
+                { position: 16, castMember: "Charity Nelms" }, { position: 15, castMember: "Shauhin Davari" },
+                { position: 14, castMember: "Kyle Fraser" }, { position: 13, castMember: "Stephanie Berger" },
+                { position: 12, castMember: "Joe Hunter" }, { position: 11, castMember: "David Kinne" },
+                { position: 10, castMember: "Mary Zheng" }, { position: 9, castMember: "Mitch Guerra" },
+                { position: 8, castMember: "Kevin Leung" }, { position: 7, castMember: "Star Toomey" },
+                { position: 6, castMember: "Cedrek McFadden" }, { position: 5, castMember: "Thomas Krottinger" },
+                { position: 4, castMember: "Bianca Roses" }, { position: 3, castMember: "Saiounia 'Sai' Hughley" },
+                { position: 2, castMember: "Chrissy Sarnowsky" }, { position: 1, castMember: "Kamilla Karthigesu" }
+            ],
+            score: hardcodedScores["Campy"]
+        },
+        {
+            userName: "Ivette",
+            rankings: [
+                { position: 18, castMember: "Charity Nelms" }, { position: 17, castMember: "Chrissy Sarnowsky" },
+                { position: 16, castMember: "Stephanie Berger" }, { position: 15, castMember: "Shauhin Davari" },
+                { position: 14, castMember: "Thomas Krottinger" }, { position: 13, castMember: "Cedrek McFadden" },
+                { position: 12, castMember: "Mary Zheng" }, { position: 11, castMember: "Star Toomey" },
+                { position: 10, castMember: "David Kinne" }, { position: 9, castMember: "Bianca Roses" },
+                { position: 8, castMember: "Kamilla Karthigesu" }, { position: 7, castMember: "Kyle Fraser" },
+                { position: 6, castMember: "Kevin Leung" }, { position: 5, castMember: "Justin Pioppi" },
+                { position: 4, castMember: "Eva Erickson" }, { position: 3, castMember: "Mitch Guerra" },
+                { position: 2, castMember: "Saiounia 'Sai' Hughley" }, { position: 1, castMember: "Joe Hunter" }
+            ],
+            score: hardcodedScores["Ivette"]
+        },
+        {
+            userName: "Caitlin",
+            rankings: [
+                { position: 18, castMember: "Kamilla Karthigesu" }, { position: 17, castMember: "Thomas Krottinger" },
+                { position: 16, castMember: "Bianca Roses" }, { position: 15, castMember: "Star Toomey" },
+                { position: 14, castMember: "David Kinne" }, { position: 13, castMember: "Stephanie Berger" },
+                { position: 12, castMember: "Justin Pioppi" }, { position: 11, castMember: "Mary Zheng" },
+                { position: 10, castMember: "Kevin Leung" }, { position: 9, castMember: "Chrissy Sarnowsky" },
+                { position: 8, castMember: "Mitch Guerra" }, { position: 7, castMember: "Saiounia 'Sai' Hughley" },
+                { position: 6, castMember: "Kyle Fraser" }, { position: 5, castMember: "Charity Nelms" },
+                { position: 4, castMember: "Joe Hunter" }, { position: 3, castMember: "Cedrek McFadden" },
+                { position: 2, castMember: "Eva Erickson" }, { position: 1, castMember: "Shauhin Davari" }
+            ],
+            score: hardcodedScores["Caitlin"]
         }
-      );
+    ];
 
-      // In no-cors mode, the response is opaque so we assume success if no network error occurred.
-      if (response.type === 'opaque') {
-        alert('Submission successful!');
-        setSubmissions([...submissions, submission]);
-        setShowResults(true);
-        setShowNamePrompt(false);
-      } else {
-        // In case a non-opaque response is returned, try to parse it.
-        const data = await response.json();
-        if (data.result === "success") {
-          alert('Submission successful!');
-          setSubmissions([...submissions, submission]);
-          setShowResults(true);
-          setShowNamePrompt(false);
-        } else {
-          alert('Error: ' + data.error);
+    useEffect(() => {
+        if (viewMode === "results") {
+            fetchResults();
         }
-      }
-    } catch (error) {
-      console.error('Submission error:', error);
-      alert('There was an error submitting your rankings. Please try again.');
-    }
-  };
+    }, [viewMode]);
 
-  const exportResults = () => {
-    // Code for exporting results as CSV
-  };
+    const fetchResults = async () => {
+        setLoading(true);
+        try {
+            const sortedSubmissions = submittedData.sort((a, b) => (b.score || 0) - (a.score || 0));
+            setSubmissions(sortedSubmissions);
+        } catch (error) {
+            console.error("Error fetching results:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  // Wrap the Card in a div to apply styling since Card doesn't accept a className.
-  const NamePrompt = () => (
-    <div className="max-w-md mx-auto mt-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>Submit Your Rankings</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <p className="text-red-500 font-semibold">
-              Important: You can only submit once and cannot change your rankings after submission.
-            </p>
-            <div>
-              <label className="block mb-2">Your Name:</label>
-              <input
-                autoFocus
-                type="text"
-                className="w-full p-2 border rounded"
-                value={userName}
-                onChange={(e) => setUserName(e.target.value)}
-              />
-            </div>
-            <button
-              className="w-full px-4 py-2 bg-blue-500 text-white rounded"
-              onClick={handleSubmitName}
-            >
-              Submit Final Rankings
-            </button>
-            <button
-              className="w-full px-4 py-2 border rounded"
-              onClick={() => setShowNamePrompt(false)}
-            >
-              Back to Rankings
-            </button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+    return (
+        <div style={{ padding: "30px", fontFamily: "Arial, sans-serif", maxWidth: "800px", margin: "auto" }}>
+            {viewMode === "results" ? (
+                <div>
+                    <h1 style={{ textAlign: "center", color: "#2C3E50" }}>🏆 Survivor Rankings Results 🏆</h1>
+                    {loading ? (
+                        <p style={{ textAlign: "center" }}>Loading...</p>
+                    ) : (
+                        <>
+                            <h2 style={{ color: "#27AE60", borderBottom: "2px solid #27AE60", paddingBottom: "5px" }}>
+                                📊 Leaderboard
+                            </h2>
+                            {/* Scoring Rules Section */}
+                            <div style={{
+                                backgroundColor: "#ECF0F1",
+                                padding: "15px",
+                                borderRadius: "8px",
+                                marginBottom: "20px",
+                                boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+                            }}>
+                                <h3 style={{ color: "#2C3E50", marginBottom: "5px" }}>📌 Scoring Rules:</h3>
+                                <ul style={{ paddingLeft: "20px", color: "#555", fontSize: "16px" }}>
+                                    <li><strong>🤩 Exact Elimination Guess:</strong> +5 points</li>
+                                    <li><strong>😁 One Position Off:</strong> +3 points</li>
+                                    <li><strong>🙂 Two Positions Off:</strong> +1 point</li>
+                                    <li><strong>🏆 Exact Top 3 Guess:</strong> +7 points</li>
+                                </ul>
+                            </div>
+                            <ul style={{ listStyle: "none", padding: 0 }}>
+                                {submissions.map((submission, idx) => (
+                                    <li key={submission.userName} style={{ marginBottom: "10px", fontSize: "18px" }}>
+                                        <strong style={{ color: "#2980B9" }}>{idx + 1}. {submission.userName}</strong>
+                                        <span style={{ float: "right", color: "#8E44AD" }}>Score: {submission.score}</span>
+                                    </li>
+                                ))}
+                            </ul>
 
-  const RankingForm = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle>Survivor Cast Rankings</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          {initialCastMembers.map(member => (
-            <div key={member.id} className="p-4 border rounded">
-              <div className="w-full h-60 bg-gray-200">
-                <img
-                  src={member.imageUrl || "/api/placeholder/160/160"}
-                  alt={member.name}
-                  className="w-full h-full object-cover object-top"
-                />
-              </div>
-              <h3 className="font-semibold mt-2">{member.name}</h3>
-              <p className="text-sm"><strong>Age:</strong> {member.info.age}</p>
-              <p className="text-sm"><strong>Hometown:</strong> {member.info.hometown}</p>
-              <p className="text-sm"><strong>Current Residence:</strong> {member.info.currentResidence}</p>
-              <p className="text-sm"><strong>Occupation:</strong> {member.info.occupation}</p>
-              <p className="text-sm"><strong>Description:</strong> {member.info.description}</p>
-            </div>
-          ))}
+                            <h2 style={{ color: "#E67E22", borderBottom: "2px solid #E67E22", paddingBottom: "5px" }}>
+                                📝 Detailed Submissions
+                            </h2>
+                            {submissions.map((submission) => (
+                                <div key={submission.userName} style={{
+                                    padding: "15px",
+                                    border: "1px solid #ddd",
+                                    borderRadius: "5px",
+                                    marginBottom: "20px",
+                                    backgroundColor: "#FAFAFA"
+                                }}>
+                                    <h3 style={{ color: "#C0392B" }}>{submission.userName} – Score: {submission.score}</h3>
+                                    <ul>
+                                        {submission.rankings.map((ranking) => (
+                                            <li key={ranking.position} style={{ padding: "5px 0", fontSize: "16px" }}>
+                                                <strong style={{ color: "#16A085" }}>{ranking.position}.</strong> {ranking.castMember}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ))}
+                        </>
+                    )}
+                </div>
+            ) : (
+                <div style={{ textAlign: "center" }}>
+                    <h1>🏆 Submit Your Rankings</h1>
+                    <button onClick={() => setViewMode("results")}>📜 View Results</button>
+                </div>
+            )}
         </div>
-        <div className="space-y-4">
-          {Array.from({ length: 18 }, (_, index) => (
-            <div key={index} className="flex items-center gap-4">
-              <span className="font-semibold w-8">{18 - index}</span>
-              <CustomDropdown
-                selectedCastMembers={selectedCastMembers}
-                rankings={rankings}
-                position={index}
-                handleRankingChange={handleRankingChange}
-              />
-            </div>
-          ))}
-        </div>
-        <div className="mt-6 flex justify-between">
-          <button
-            className="px-4 py-2 bg-blue-500 text-white rounded"
-            onClick={() => setShowNamePrompt(true)}
-          >
-            Continue to Submit
-          </button>
-          <button
-            className="px-4 py-2 border rounded"
-            onClick={exportResults}
-          >
-            Export CSV
-          </button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  const ResultsView = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle>Results</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {submissions.map((submission) => (
-            <div key={submission.userName} className="p-4 border rounded">
-              <div className="flex justify-between">
-                <span className="font-semibold">{submission.userName}</span>
-                {/* Remove or define submission.score if not needed */}
-                <span className="text-sm text-gray-500">Score: {'-'}</span>
-              </div>
-              <div className="text-sm">
-                {submission.rankings.map((ranking, i) => (
-                  <div key={i}>
-                    <strong>{i + 1}.</strong> {ranking.castMember}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  return showResults ? (
-    <ResultsView />
-  ) : showNamePrompt ? (
-    <NamePrompt />
-  ) : (
-    <RankingForm />
-  );
-};
-
-interface CustomDropdownProps {
-  selectedCastMembers: CastMember[];
-  rankings: (number | null)[];
-  position: number;
-  handleRankingChange: (position: number, castMemberId: number | null) => void;
-}
-
-const CustomDropdown = ({
-  selectedCastMembers,
-  rankings,
-  position,
-  handleRankingChange,
-}: CustomDropdownProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-  return (
-    <div className="relative w-full">
-      <div
-        className="border rounded p-2 cursor-pointer"
-        tabIndex={0}
-        onClick={() => setIsOpen((prev) => !prev)}
-      >
-        {rankings[position] ? (
-          <span className="font-semibold">
-            {selectedCastMembers.find((m: CastMember) => m.id === rankings[position])?.name}
-          </span>
-        ) : (
-          <span className="text-gray-500">Select Cast Member</span>
-        )}
-      </div>
-      {isOpen && (
-        <div className="absolute left-0 right-0 mt-1 bg-white border rounded shadow-lg z-10">
-          {selectedCastMembers.map((member: CastMember) => {
-            const isSelected = rankings.includes(member.id);
-            return (
-              <div
-                key={member.id}
-                className={`p-2 cursor-pointer ${isSelected ? 'text-gray-400' : ''}`}
-                style={isSelected ? { textDecoration: 'line-through' } : {}}
-                onClick={() => handleRankingChange(position, isSelected ? null : member.id)}
-              >
-                {member.name}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
+    );
 };
 
 export default SurvivorRankingApp;
+
+
