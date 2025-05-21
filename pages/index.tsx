@@ -16,10 +16,10 @@ const SurvivorRankingApp = () => {
 
     // Hardcoded scores for all 14 submitters
     const hardcodedScores: { [key: string]: number } = {
-        "Sammy": 8, "Sarah K": 9, "Tom Kourlis": 11, "Genna": 14,
-        "Vale": 6, "Danica W": 6, "Cristina Miller": 13, "Izzy": 14,
-        "Andy": 11, "Aram": 3, "Alexandra Campanile": 3, "Campy": 5,
-        "Ivette": 12, "Caitlin": 2
+        "Sammy": 11, "Sarah K": 9, "Tom Kourlis": 16, "Genna": 17,
+        "Vale": 6, "Danica W": 7, "Cristina Miller": 19, "Izzy": 15,
+        "Andy": 11, "Aram": 8, "Alexandra Campanile": 4, "Campy": 7,
+        "Ivette": 13, "Caitlin": 2
     };
 
     // Full submitted rankings for all 14 users
